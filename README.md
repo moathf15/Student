@@ -203,7 +203,7 @@ input.team-name {
 <audio id="wrongSound" src="https://www.soundjay.com/button/beep-10.mp3"></audio>
 
 <script>
-let questions=[], currentTeam=1, timer, time=90, score1=0, score2=0;
+let questions=[], currentTeam=1, timer, time=60, score1=0, score2=0;
 
 function startGame(){
   let t1=document.getElementById("team1Name").value.trim();
