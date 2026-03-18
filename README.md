@@ -1,8 +1,7 @@
-<!DOCTYPE html>
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>لعبة جدول الضرب - الفريقين</title>
 
 <style>
@@ -13,38 +12,43 @@ body {
   text-align: center;
 }
 
+/* تصميم الحاوية */
 .container {
+  max-width: 1024px;
+  margin: 0 auto;
   padding: 15px;
 }
 
+/* العنوان */
 h1 {
   color: white;
+  font-size: 2em;
 }
 
-/* الفرق */
+/* الفرق والنتائج */
 .teams {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
   margin-bottom: 15px;
+  flex-wrap: wrap;
 }
 
 .team {
-  flex: 1 1 150px;
+  display: flex;
+  align-items: center;
   padding: 10px;
   border-radius: 12px;
   color: white;
   font-weight: bold;
 }
 
-.team1 { background-color: #1f7a4c; text-align:left; }
-.team2 { background-color: #bf1f3f; text-align:right; }
+.team1 { background-color: #1f7a4c; justify-content: flex-start; }
+.team2 { background-color: #bf1f3f; justify-content: flex-end; }
 
 input.team-name {
   padding: 8px;
-  width: 120px;
+  width: 150px;
   border-radius: 8px;
   border: none;
   text-align: center;
@@ -53,7 +57,7 @@ input.team-name {
 
 /* زر البداية */
 .start-btn {
-  padding: 10px 20px;
+  padding: 10px 25px;
   margin-top: 10px;
   border-radius: 10px;
   border: none;
@@ -62,7 +66,7 @@ input.team-name {
   cursor: pointer;
 }
 
-/* زر العودة للبداية */
+/* زر الرجوع للبداية */
 .home-btn {
   padding: 8px 15px;
   border-radius: 8px;
@@ -80,14 +84,14 @@ input.team-name {
 /* شبكة الأسئلة */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
-  gap: 5px;
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+  gap: 6px;
   margin-top: 20px;
 }
 
-/* الأزرار */
+/* أزرار الأسئلة */
 .question-btn {
-  padding: 12px;
+  padding: 14px;
   border-radius: 8px;
   background: white;
   font-weight: bold;
@@ -107,14 +111,14 @@ input.team-name {
   margin: 20px auto;
   padding: 15px;
   border-radius: 12px;
-  max-width: 350px;
+  max-width: 400px;
 }
 
 .answers button {
   display: block;
   margin: 8px auto;
   width: 80%;
-  padding: 10px;
+  padding: 12px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
@@ -124,7 +128,7 @@ input.team-name {
 .wrong { background-color: red !important; color: white; }
 
 .timer {
-  font-size: 20px;
+  font-size: 22px;
   margin-top: 10px;
   color: white;
 }
@@ -136,12 +140,26 @@ input.team-name {
   color: #ff4500;
 }
 
+/* عرض النتائج (عدد الإجابات) */
 .scores {
-  margin-top: 10px;
+  margin-top: 15px;
   display: flex;
   justify-content: space-between;
   color: white;
   font-weight: bold;
+  font-size: 18px;
+}
+
+.score-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.score-number {
+  background: rgba(255,255,255,0.3);
+  padding: 4px 8px;
+  border-radius: 6px;
 }
 </style>
 </head>
@@ -150,15 +168,18 @@ input.team-name {
 <div class="container">
   <h1>🎮 لعبة جدول الضرب</h1>
 
+  <!-- زر العودة للبداية -->
   <button class="home-btn" onclick="restartGame()">🏠 الرجوع للبداية</button>
 
   <!-- الفرق -->
   <div class="teams">
     <div class="team team1">
-      الفريق 1: <input type="text" id="team1Name" class="team-name" placeholder="اسم الفريق 1">
+      <input type="text" id="team1Name" class="team-name" placeholder="الفريق 1">
+      <div class="score-item">عدد الإجابات: <span id="scoreTeam1" class="score-number">0</span></div>
     </div>
     <div class="team team2">
-      الفريق 2: <input type="text" id="team2Name" class="team-name" placeholder="اسم الفريق 2">
+      <div class="score-item">عدد الإجابات: <span id="scoreTeam2" class="score-number">0</span></div>
+      <input type="text" id="team2Name" class="team-name" placeholder="الفريق 2">
     </div>
   </div>
 
@@ -176,88 +197,65 @@ input.team-name {
     <div class="answers" id="answers"></div>
     <div class="message" id="message"></div>
   </div>
-
-  <!-- النتائج -->
-  <div class="scores" id="scores">
-    <div id="scoreTeam1">0</div>
-    <div id="scoreTeam2">0</div>
-  </div>
 </div>
 
 <audio id="correctSound" src="https://www.soundjay.com/human/applause-8.mp3"></audio>
 <audio id="wrongSound" src="https://www.soundjay.com/button/beep-10.mp3"></audio>
 
 <script>
-let questions = [];
-let currentTeam = 1;
-let timer;
-let time = 90;
-let score1 = 0, score2 = 0;
+let questions=[], currentTeam=1, timer, time=90, score1=0, score2=0;
 
-/* بدء اللعبة */
-function startGame() {
-  let t1 = document.getElementById("team1Name").value.trim();
-  let t2 = document.getElementById("team2Name").value.trim();
-  if(!t1 || !t2) { alert("ادخل اسم الفريقين!"); return; }
-
-  document.getElementById("team1Name").disabled = true;
-  document.getElementById("team2Name").disabled = true;
-  document.getElementById("startBtn").disabled = true;
-
+function startGame(){
+  let t1=document.getElementById("team1Name").value.trim();
+  let t2=document.getElementById("team2Name").value.trim();
+  if(!t1||!t2){ alert("ادخل اسم الفريقين!"); return;}
+  document.getElementById("team1Name").disabled=true;
+  document.getElementById("team2Name").disabled=true;
+  document.getElementById("startBtn").disabled=true;
   generateQuestions();
   createGrid();
   updateScores();
 }
 
-/* توليد الأسئلة */
-function generateQuestions() {
-  questions = [];
+function generateQuestions(){
+  questions=[];
   for(let i=1;i<=10;i++){
     for(let j=1;j<=10;j++){
-      let correct = i*j;
-      let options=[correct];
-      while(options.length<4){
-        let rand=Math.floor(Math.random()*100);
-        if(!options.includes(rand)) options.push(rand);
-      }
+      let correct=i*j, options=[correct];
+      while(options.length<4){ let rand=Math.floor(Math.random()*100); if(!options.includes(rand)) options.push(rand);}
       options.sort(()=>Math.random()-0.5);
       questions.push({q:`${i} × ${j}`, correct:correct, options:options});
     }
   }
 }
 
-/* إنشاء شبكة الأسئلة */
 function createGrid(){
-  let grid=document.getElementById("grid");
-  grid.innerHTML="";
+  let grid=document.getElementById("grid"); grid.innerHTML="";
   questions.forEach((q,index)=>{
     let btn=document.createElement("button");
     btn.innerText=index+1;
     btn.className="question-btn";
-    btn.onclick=()=> showQuestion(index,btn);
+    btn.onclick=()=>showQuestion(index,btn);
     grid.appendChild(btn);
   });
 }
 
-/* عرض السؤال */
 function showQuestion(index,btn){
   btn.disabled=true;
   let q=questions[index];
   document.getElementById("question").innerText=q.q;
-  let answersDiv=document.getElementById("answers");
-  answersDiv.innerHTML="";
+  let answersDiv=document.getElementById("answers"); answersDiv.innerHTML="";
   document.getElementById("message").innerText="";
   document.getElementById("questionBox").style.display="block";
   startTimer();
   q.options.forEach(option=>{
     let b=document.createElement("button");
     b.innerText=option;
-    b.onclick=()=> checkAnswer(b,option,q.correct);
+    b.onclick=()=>checkAnswer(b,option,q.correct);
     answersDiv.appendChild(b);
   });
 }
 
-/* التحقق من الإجابة */
 function checkAnswer(button,selected,correct){
   clearInterval(timer);
   if(selected===correct){
@@ -275,16 +273,12 @@ function checkAnswer(button,selected,correct){
   }
 }
 
-/* المؤقت */
 function startTimer(){
-  time=90;
-  updateTimer();
+  time=90; updateTimer();
   clearInterval(timer);
   timer=setInterval(()=>{
-    time--;
-    updateTimer();
-    if(time<=0){
-      clearInterval(timer);
+    time--; updateTimer();
+    if(time<=0){ clearInterval(timer);
       document.getElementById("message").innerText="انتهى الوقت! السؤال للفريق الآخر ⏰";
       setTimeout(switchTeam,2000);
     }
@@ -295,14 +289,12 @@ function updateTimer(){
   document.getElementById("timer").innerText=`⏱ دور الفريق ${currentTeam} - ${time} ثانية`;
 }
 
-/* تغيير الفريق */
 function switchTeam(){
   currentTeam=currentTeam===1?2:1;
   document.getElementById("questionBox").style.display="none";
   document.getElementById("timer").innerText="";
 }
 
-/* اختيار الفريق الفائز */
 function showWinnerChoice(){
   document.getElementById("message").innerHTML=`
     اختر الفريق الفائز بالسؤال:<br>
@@ -317,16 +309,12 @@ function winnerSelected(team){
   setTimeout(switchTeam,2000);
 }
 
-/* تحديث النتائج */
 function updateScores(){
-  document.getElementById("scoreTeam1").innerText=document.getElementById("team1Name").value+": "+score1;
-  document.getElementById("scoreTeam2").innerText=document.getElementById("team2Name").value+": "+score2;
+  document.getElementById("scoreTeam1").innerText=score1;
+  document.getElementById("scoreTeam2").innerText=score2;
 }
 
-/* زر الرجوع للبداية */
-function restartGame(){
-  location.reload();
-}
+function restartGame(){ location.reload(); }
 </script>
 </body>
 </html>
